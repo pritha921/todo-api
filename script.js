@@ -7,12 +7,12 @@ let updateText;
 const apiUrl = 'https://65c1ebcff7e6ea59682a0de4.mockapi.io/api/v1/todo';
 
 document.addEventListener("DOMContentLoaded", function () {
-    loadTasksFromLocalStorage();
+    loadTasksFromApi();
     
     const drake = dragula([listItems]);
 
     drake.on('drop', function () {
-        saveTasksToLocalStorage();
+        saveTasksToApi();
     });
 });
 
@@ -33,9 +33,8 @@ function createToDoData() {
     listItems.appendChild(li);
     todoValue.value = "";
 
-    saveTasksToLocalStorage();
+    saveTasksToApi();
 }
-
 
 function completeToDoItems(element) {
     const listItem = findParentListItem(element);
@@ -52,7 +51,7 @@ function completeToDoItems(element) {
         checkbox.checked = !checkbox.checked;
         divElement.style.textDecoration = checkbox.checked ? "line-through" : "";
 
-        saveTasksToLocalStorage();
+        saveTasksToApi();
     }
 }
 
@@ -67,8 +66,8 @@ function findParentListItem(element) {
 function updateToDoItems(e) {
     const listItem = e.closest("li");
     listItem.classList.add("editing");
-    todoValue.value = e.parentElement.parentElement.querySelector("div span").innerText;
-    updateText = e.parentElement.parentElement.querySelector("div span");
+    todoValue.value = listItem.querySelector("div span").innerText;
+    updateText = listItem.querySelector("div span");
     addUpdateClick.onclick = updateOnSelectionItems;
     addUpdateClick.className = "fa-solid fa-arrows-rotate";
 }
@@ -80,23 +79,50 @@ function updateOnSelectionItems() {
     const listItem = findParentListItem(updateText);
     listItem.classList.remove("editing");
 
+    // Update task in the API
+    const taskId = listItem.dataset.id;
+    const updatedTask = {
+        taskText: todoValue.value,
+        completed: listItem.querySelector("input").checked
+    };
+    updateTaskInAPI(taskId, updatedTask);
+
     addUpdateClick.onclick = createToDoData;
-    saveTasksToLocalStorage();
     addUpdateClick.className = "fa-solid fa-circle-plus";
     todoValue.value = "";
 }
 
-// --------------------------------------------------------------------------------------
+async function updateTaskInAPI(taskId, updatedTask) {
+    console.log(taskId)
+    const url = `${apiUrl}/${taskId}`;
+    try {
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedTask)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update task in API. Status: ${response.status} - ${response.statusText}`);
+        }
+
+        console.log('Task updated in API successfully');
+    } catch (error) {
+        console.error('Error updating task in API:', error);
+    }
+}
+
 function deleteToDoItems(e) {
     let listItem = e.closest("li");
     let deleteValue = listItem.querySelector("div span").innerText;
 
     if (confirm(`Do you want to delete this ${deleteValue}?`)) {
         listItem.remove();
-        saveTasksToLocalStorage();
+        saveTasksToApi();
     }
 }
-//---------------------------------------------------------------------------------------
 
 function removeAllItems() {
     if (confirm("Do you want to remove all tasks?")) {
@@ -106,11 +132,11 @@ function removeAllItems() {
             todoValue.value = "";
             
         }
-        saveTasksToLocalStorage();
+        saveTasksToApi();
     }
 }
 
-async function saveTasksToLocalStorage() {
+async function saveTasksToApi() {
     const tasks = Array.from(listItems.children).map(li => {
         const taskText = li.querySelector("div span").innerText;
         const completed = li.querySelector("input").checked;
@@ -136,10 +162,7 @@ async function saveTasksToLocalStorage() {
     }
 }
 
-
-
-  
-async function loadTasksFromLocalStorage() {
+async function loadTasksFromApi() {
     try {
         const response = await fetch(apiUrl);
         if (!response.ok) {
@@ -158,9 +181,11 @@ async function loadTasksFromLocalStorage() {
     }
 }
 
-
 function createListItem(taskText, completed) {
     const li = document.createElement("li");
+    const taskId = generateTaskId();
+    li.dataset.id = taskId;
+
     const todoItems = `<div>
                         <input type="checkbox" onchange="completeToDoItems(this)" ${completed ? 'checked' : ''}>
                         <span>${taskText}</span>
@@ -187,4 +212,8 @@ function createListItem(taskText, completed) {
     });
 
     return li;
+}
+
+function generateTaskId() {
+    return Date.now().toString() + Math.floor(Math.random() * 1000);
 }
