@@ -153,7 +153,7 @@ async function saveTasksToApi() {
 
     try {
         const response = await fetch(apiUrl, {
-            method: 'POST', 
+            method: 'PUT', 
             headers: {
                 'Content-Type': 'application/json'
             },
