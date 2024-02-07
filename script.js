@@ -4,10 +4,12 @@ const addUpdateClick = document.getElementById("addUpdateClick");
 const removeAllButton = document.getElementById("removeAll");
 removeAllButton.addEventListener("click", removeAllItems);
 let updateText;
-const apiUrl = 'https://65c1ebcff7e6ea59682a0de4.mockapi.io/api/v1/todo';
+const apiUrl = 'https://65c1ebcff7e6ea59682a0de4.mockapi.io/api/v1/todo/';
+let taskIdCounter = 0;
 
 document.addEventListener("DOMContentLoaded", function () {
     loadTasksFromApi();
+    taskIdCounter = 0;
     
     const drake = dragula([listItems]);
 
@@ -21,6 +23,8 @@ todoValue.addEventListener("keypress", function (e) {
         addUpdateClick.click();
     }
 });
+
+
 
 function createToDoData() {
     if (todoValue.value === "") {
@@ -64,6 +68,7 @@ function findParentListItem(element) {
 }
 
 function updateToDoItems(e) {
+    console.log("value:",e)
     const listItem = e.closest("li");
     listItem.classList.add("editing");
     todoValue.value = listItem.querySelector("div span").innerText;
@@ -79,11 +84,10 @@ function updateOnSelectionItems() {
     const listItem = findParentListItem(updateText);
     listItem.classList.remove("editing");
 
-    // Update task in the API
     const taskId = listItem.dataset.id;
     const updatedTask = {
         taskText: todoValue.value,
-        completed: listItem.querySelector("input").checked
+        completed: listItem.querySelector("input").checked,
     };
     updateTaskInAPI(taskId, updatedTask);
 
@@ -136,16 +140,20 @@ function removeAllItems() {
     }
 }
 
+
+
 async function saveTasksToApi() {
-    const tasks = Array.from(listItems.children).map(li => {
+    const tasks = Array.from(listItems.children).map((li, index) => {
         const taskText = li.querySelector("div span").innerText;
         const completed = li.querySelector("input").checked;
-        return { taskText, completed };
+        const id = li.dataset.id || ++taskIdCounter;
+        li.dataset.id = id;
+        return { taskText, completed, id };
     });
 
     try {
         const response = await fetch(apiUrl, {
-            method: 'PUT',
+            method: 'POST', 
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -162,6 +170,8 @@ async function saveTasksToApi() {
     }
 }
 
+
+
 async function loadTasksFromApi() {
     try {
         const response = await fetch(apiUrl);
@@ -170,8 +180,9 @@ async function loadTasksFromApi() {
         }
         const tasks = await response.json();
 
-        tasks.forEach(({ taskText, completed }) => {
-            const li = createListItem(taskText, completed);
+        tasks.forEach(({ taskText, completed, id}) => {
+            taskIdCounter = Math.max(taskIdCounter, id); 
+            const li = createListItem(taskText, completed, id );
             listItems.appendChild(li);
         });
 
@@ -181,14 +192,21 @@ async function loadTasksFromApi() {
     }
 }
 
-function createListItem(taskText, completed) {
+
+
+
+function createListItem(taskText, completed, id) {
     const li = document.createElement("li");
-    const taskId = generateTaskId();
-    li.dataset.id = taskId;
+
+    if (!id) {
+        id = ++taskIdCounter;
+    }
+
+    li.dataset.id = id;
 
     const todoItems = `<div>
                         <input type="checkbox" onchange="completeToDoItems(this)" ${completed ? 'checked' : ''}>
-                        <span>${taskText}</span>
+                        <span>${taskText}-${id}</span>
                         </div>
                         <div>
                             <i onclick="updateToDoItems(this)" class="todo-controls fa-regular fa-pen-to-square"></i>
@@ -214,6 +232,4 @@ function createListItem(taskText, completed) {
     return li;
 }
 
-function generateTaskId() {
-    return Date.now().toString() + Math.floor(Math.random() * 1000);
-}
+
