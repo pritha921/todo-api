@@ -26,7 +26,21 @@ todoValue.addEventListener("keypress", function (e) {
 
 
 
-function createToDoData() {
+// function createToDoData() {
+//     if (todoValue.value === "") {
+//         alert("Please enter a task");
+//         return;
+//     }
+
+//     const taskText = todoValue.value;
+//     const li = createListItem(taskText, false);
+//     listItems.appendChild(li);
+//     todoValue.value = "";
+
+//     saveTasksToApi();
+// }
+
+async function createToDoData() {
     if (todoValue.value === "") {
         alert("Please enter a task");
         return;
@@ -34,11 +48,34 @@ function createToDoData() {
 
     const taskText = todoValue.value;
     const li = createListItem(taskText, false);
-    listItems.appendChild(li);
-    todoValue.value = "";
 
-    saveTasksToApi();
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                taskText: taskText,
+                completed: false
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to add task to API. Status: ${response.status} - ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        li.dataset.id = responseData.id;
+        listItems.appendChild(li);
+        todoValue.value = "";
+
+        alert("Task added successfully");
+    } catch (error) {
+        console.error('Error adding task to API:', error);
+    }
 }
+
 
 function completeToDoItems(element) {
     const listItem = findParentListItem(element);
@@ -206,7 +243,7 @@ function createListItem(taskText, completed, id) {
 
     const todoItems = `<div>
                         <input type="checkbox" onchange="completeToDoItems(this)" ${completed ? 'checked' : ''}>
-                        <span>${taskText}-${id}</span>
+                        <span>${taskText}</span>
                         </div>
                         <div>
                             <i onclick="updateToDoItems(this)" class="todo-controls fa-regular fa-pen-to-square"></i>
