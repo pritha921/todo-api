@@ -155,27 +155,75 @@ async function updateTaskInAPI(taskId, updatedTask) {
     }
 }
 
-function deleteToDoItems(e) {
+// function deleteToDoItems(e) {
+//     let listItem = e.closest("li");
+//     let deleteValue = listItem.querySelector("div span").innerText;
+
+//     if (confirm(`Do you want to delete this ${deleteValue}?`)) {
+//         listItem.remove();
+//         saveTasksToApi();
+//     }
+// }
+
+async function deleteToDoItems(e) {
     let listItem = e.closest("li");
+    let taskId = listItem.dataset.id;
     let deleteValue = listItem.querySelector("div span").innerText;
 
     if (confirm(`Do you want to delete this ${deleteValue}?`)) {
-        listItem.remove();
-        saveTasksToApi();
+        try {
+            const url = `${apiUrl}/${taskId}`;
+            const response = await fetch(url, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete task from API. Status: ${response.status} - ${response.statusText}`);
+            }
+
+            listItem.remove();
+            saveTasksToApi();
+            alert("Task deleted successfully");
+        } catch (error) {
+            console.error('Error deleting task from API:', error);
+        }
     }
 }
 
-function removeAllItems() {
-    if (confirm("Do you want to remove all tasks?")) {
-        while (listItems.firstChild) {
-            listItems.removeChild(listItems.firstChild);
-            addUpdateClick.className = "fa-solid fa-circle-plus";
-            todoValue.value = "";
+
+// function removeAllItems() {
+//     if (confirm("Do you want to remove all tasks?")) {
+//         while (listItems.firstChild) {
+//             listItems.removeChild(listItems.firstChild);
+//             addUpdateClick.className = "fa-solid fa-circle-plus";
+//             todoValue.value = "";
             
+//         }
+//         saveTasksToApi();
+//     }
+// }
+
+async function removeAllItems() {
+    if (confirm("Do you want to remove all tasks?")) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete all tasks from API. Status: ${response.status} - ${response.statusText}`);
+            }
+
+            while (listItems.firstChild) {
+                listItems.removeChild(listItems.firstChild);
+            }
+            alert("All tasks deleted successfully");
+        } catch (error) {
+            console.error('Error deleting all tasks from API:', error);
         }
-        saveTasksToApi();
     }
 }
+
 
 
 
