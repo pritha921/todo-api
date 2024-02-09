@@ -114,7 +114,7 @@ function updateToDoItems(e) {
     addUpdateClick.className = "fa-solid fa-arrows-rotate";
 }
 
-function updateOnSelectionItems() {
+async function updateOnSelectionItems() {
     updateText.innerText = todoValue.value;
     alert("Task updated successfully");
 
@@ -126,12 +126,31 @@ function updateOnSelectionItems() {
         taskText: todoValue.value,
         completed: listItem.querySelector("input").checked,
     };
-    updateTaskInAPI(taskId, updatedTask);
 
-    addUpdateClick.onclick = createToDoData;
-    addUpdateClick.className = "fa-solid fa-circle-plus";
-    todoValue.value = "";
+    try {
+        const url = `${apiUrl}/${taskId}`;
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedTask)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update task in API. Status: ${response.status} - ${response.statusText}`);
+        }
+
+        alert("Task updated successfully");
+
+        addUpdateClick.onclick = createToDoData;
+        addUpdateClick.className = "fa-solid fa-circle-plus";
+        todoValue.value = "";
+    } catch (error) {
+        console.error('Error updating task in API:', error);
+    }
 }
+
 
 async function updateTaskInAPI(taskId, updatedTask) {
     console.log(taskId)
@@ -189,6 +208,7 @@ async function deleteToDoItems(e) {
         }
     }
 }
+
 
 
 // function removeAllItems() {
@@ -316,5 +336,3 @@ function createListItem(taskText, completed, id) {
 
     return li;
 }
-
-
