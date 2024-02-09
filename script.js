@@ -77,9 +77,10 @@ async function createToDoData() {
 }
 
 
-function completeToDoItems(element) {
-    const listItem = findParentListItem(element);
 
+
+async function completeToDoItems(element) {
+    const listItem = findParentListItem(element);
 
     if (listItem && listItem.classList.contains("editing")) {
         return;
@@ -92,9 +93,33 @@ function completeToDoItems(element) {
         checkbox.checked = !checkbox.checked;
         divElement.style.textDecoration = checkbox.checked ? "line-through" : "";
 
-        saveTasksToApi();
+        const taskId = listItem.dataset.id;
+        const updatedTask = {
+            taskText: listItem.querySelector("div span").innerText,
+            completed: checkbox.checked,
+        };
+
+        try {
+            const url = `${apiUrl}/${taskId}`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedTask)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to update task in API. Status: ${response.status} - ${response.statusText}`);
+            }
+
+            console.log('Task updated in API successfully');
+        } catch (error) {
+            console.error('Error updating task in API:', error);
+        }
     }
 }
+
 
 function findParentListItem(element) {
     let parent = element.parentElement;
