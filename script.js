@@ -209,6 +209,7 @@ async function updateTaskInAPI(taskId, updatedTask) {
 //     }
 // }
 
+
 async function deleteToDoItems(e) {
     let listItem = e.closest("li");
     let taskId = listItem.dataset.id;
@@ -226,13 +227,13 @@ async function deleteToDoItems(e) {
             }
 
             listItem.remove();
-            saveTasksToApi();
             alert("Task deleted successfully");
         } catch (error) {
             console.error('Error deleting task from API:', error);
         }
     }
 }
+
 
 
 
