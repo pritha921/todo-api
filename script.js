@@ -4,7 +4,7 @@ const addUpdateClick = document.getElementById("addUpdateClick");
 const removeAllButton = document.getElementById("removeAll");
 removeAllButton.addEventListener("click", removeAllItems);
 let updateText;
-const apiUrl = 'https://65c1ebcff7e6ea59682a0de4.mockapi.io/api/v1/todo/';
+const apiUrl = 'http://localhost:3000/todo';
 let taskIdCounter = 0;
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -153,7 +153,7 @@ async function saveTasksToApi() {
 
     try {
         const response = await fetch(apiUrl, {
-            method: 'PUT', 
+            method: 'POST', 
             headers: {
                 'Content-Type': 'application/json'
             },
