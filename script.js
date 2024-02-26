@@ -26,7 +26,21 @@ todoValue.addEventListener("keypress", function (e) {
 
 
 
-function createToDoData() {
+// function createToDoData() {
+//     if (todoValue.value === "") {
+//         alert("Please enter a task");
+//         return;
+//     }
+
+//     const taskText = todoValue.value;
+//     const li = createListItem(taskText, false);
+//     listItems.appendChild(li);
+//     todoValue.value = "";
+
+//     saveTasksToApi();
+// }
+
+async function createToDoData() {
     if (todoValue.value === "") {
         alert("Please enter a task");
         return;
@@ -34,15 +48,39 @@ function createToDoData() {
 
     const taskText = todoValue.value;
     const li = createListItem(taskText, false);
-    listItems.appendChild(li);
-    todoValue.value = "";
 
-    saveTasksToApi();
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                taskText: taskText,
+                completed: false
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to add task to API. Status: ${response.status} - ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        li.dataset.id = responseData.id;
+        listItems.appendChild(li);
+        todoValue.value = "";
+
+        alert("Task added successfully");
+    } catch (error) {
+        console.error('Error adding task to API:', error);
+    }
 }
 
-function completeToDoItems(element) {
-    const listItem = findParentListItem(element);
 
+
+
+async function completeToDoItems(element) {
+    const listItem = findParentListItem(element);
 
     if (listItem && listItem.classList.contains("editing")) {
         return;
@@ -55,9 +93,33 @@ function completeToDoItems(element) {
         checkbox.checked = !checkbox.checked;
         divElement.style.textDecoration = checkbox.checked ? "line-through" : "";
 
-        saveTasksToApi();
+        const taskId = listItem.dataset.id;
+        const updatedTask = {
+            taskText: listItem.querySelector("div span").innerText,
+            completed: checkbox.checked,
+        };
+
+        try {
+            const url = `${apiUrl}/${taskId}`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedTask)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to update task in API. Status: ${response.status} - ${response.statusText}`);
+            }
+
+            console.log('Task updated in API successfully');
+        } catch (error) {
+            console.error('Error updating task in API:', error);
+        }
     }
 }
+
 
 function findParentListItem(element) {
     let parent = element.parentElement;
@@ -77,7 +139,7 @@ function updateToDoItems(e) {
     addUpdateClick.className = "fa-solid fa-arrows-rotate";
 }
 
-function updateOnSelectionItems() {
+async function updateOnSelectionItems() {
     updateText.innerText = todoValue.value;
     alert("Task updated successfully");
 
@@ -89,12 +151,31 @@ function updateOnSelectionItems() {
         taskText: todoValue.value,
         completed: listItem.querySelector("input").checked,
     };
-    updateTaskInAPI(taskId, updatedTask);
 
-    addUpdateClick.onclick = createToDoData;
-    addUpdateClick.className = "fa-solid fa-circle-plus";
-    todoValue.value = "";
+    try {
+        const url = `${apiUrl}/${taskId}`;
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedTask)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update task in API. Status: ${response.status} - ${response.statusText}`);
+        }
+
+        alert("Task updated successfully");
+
+        addUpdateClick.onclick = createToDoData;
+        addUpdateClick.className = "fa-solid fa-circle-plus";
+        todoValue.value = "";
+    } catch (error) {
+        console.error('Error updating task in API:', error);
+    }
 }
+
 
 async function updateTaskInAPI(taskId, updatedTask) {
     console.log(taskId)
@@ -118,27 +199,77 @@ async function updateTaskInAPI(taskId, updatedTask) {
     }
 }
 
-function deleteToDoItems(e) {
+// function deleteToDoItems(e) {
+//     let listItem = e.closest("li");
+//     let deleteValue = listItem.querySelector("div span").innerText;
+
+//     if (confirm(`Do you want to delete this ${deleteValue}?`)) {
+//         listItem.remove();
+//         saveTasksToApi();
+//     }
+// }
+
+
+async function deleteToDoItems(e) {
     let listItem = e.closest("li");
+    let taskId = listItem.dataset.id;
     let deleteValue = listItem.querySelector("div span").innerText;
 
     if (confirm(`Do you want to delete this ${deleteValue}?`)) {
-        listItem.remove();
-        saveTasksToApi();
+        try {
+            const url = `${apiUrl}/${taskId}`;
+            const response = await fetch(url, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete task from API. Status: ${response.status} - ${response.statusText}`);
+            }
+
+            listItem.remove();
+            alert("Task deleted successfully");
+        } catch (error) {
+            console.error('Error deleting task from API:', error);
+        }
     }
 }
 
-function removeAllItems() {
-    if (confirm("Do you want to remove all tasks?")) {
-        while (listItems.firstChild) {
-            listItems.removeChild(listItems.firstChild);
-            addUpdateClick.className = "fa-solid fa-circle-plus";
-            todoValue.value = "";
+
+
+
+// function removeAllItems() {
+//     if (confirm("Do you want to remove all tasks?")) {
+//         while (listItems.firstChild) {
+//             listItems.removeChild(listItems.firstChild);
+//             addUpdateClick.className = "fa-solid fa-circle-plus";
+//             todoValue.value = "";
             
+//         }
+//         saveTasksToApi();
+//     }
+// }
+
+async function removeAllItems() {
+    if (confirm("Do you want to remove all tasks?")) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete all tasks from API. Status: ${response.status} - ${response.statusText}`);
+            }
+
+            while (listItems.firstChild) {
+                listItems.removeChild(listItems.firstChild);
+            }
+            alert("All tasks deleted successfully");
+        } catch (error) {
+            console.error('Error deleting all tasks from API:', error);
         }
-        saveTasksToApi();
     }
 }
+
 
 
 
@@ -206,7 +337,7 @@ function createListItem(taskText, completed, id) {
 
     const todoItems = `<div>
                         <input type="checkbox" onchange="completeToDoItems(this)" ${completed ? 'checked' : ''}>
-                        <span>${taskText}-${id}</span>
+                        <span>${taskText}</span>
                         </div>
                         <div>
                             <i onclick="updateToDoItems(this)" class="todo-controls fa-regular fa-pen-to-square"></i>
@@ -231,5 +362,3 @@ function createListItem(taskText, completed, id) {
 
     return li;
 }
-
-
