@@ -199,38 +199,31 @@ async function updateTaskInAPI(taskId, updatedTask) {
     }
 }
 
-// function deleteToDoItems(e) {
-//     let listItem = e.closest("li");
-//     let deleteValue = listItem.querySelector("div span").innerText;
-
-//     if (confirm(`Do you want to delete this ${deleteValue}?`)) {
-//         listItem.remove();
-//         saveTasksToApi();
-//     }
-// }
 
 
 async function deleteToDoItems(e) {
     let listItem = e.closest("li");
     let taskId = listItem.dataset.id;
-    let deleteValue = listItem.querySelector("div span").innerText;
 
-    if (confirm(`Do you want to delete this ${deleteValue}?`)) {
-        try {
-            const url = `${apiUrl}/${taskId}`;
-            const response = await fetch(url, {
-                method: 'DELETE'
-            });
+    if (!taskId) {
+        console.error('Task ID is not valid:', taskId);
+        return;
+    }
 
-            if (!response.ok) {
-                throw new Error(`Failed to delete task from API. Status: ${response.status} - ${response.statusText}`);
-            }
+    try {
+        const url = `${apiUrl}/${taskId}`;
+        const response = await fetch(url, {
+            method: 'DELETE'
+        });
 
-            listItem.remove();
-            alert("Task deleted successfully");
-        } catch (error) {
-            console.error('Error deleting task from API:', error);
+        if (!response.ok) {
+            throw new Error(`Failed to delete task from API. Status: ${response.status} - ${response.statusText}`);
         }
+
+        listItem.remove();
+        alert("Task deleted successfully");
+    } catch (error) {
+        console.error('Error deleting task from API:', error);
     }
 }
 
@@ -301,8 +294,6 @@ async function saveTasksToApi() {
     }
 }
 
-
-
 async function loadTasksFromApi() {
     try {
         const response = await fetch(apiUrl);
@@ -311,9 +302,9 @@ async function loadTasksFromApi() {
         }
         const tasks = await response.json();
 
-        tasks.forEach(({ taskText, completed, id}) => {
-            taskIdCounter = Math.max(taskIdCounter, id); 
-            const li = createListItem(taskText, completed, id );
+        tasks.forEach(({ taskText, completed, _id }) => {
+            taskIdCounter = Math.max(taskIdCounter, _id); 
+            const li = createListItem(taskText, completed, _id);
             listItems.appendChild(li);
         });
 
@@ -322,6 +313,9 @@ async function loadTasksFromApi() {
         console.error('Error loading tasks from API:', error);
     }
 }
+
+
+
 
 
 
